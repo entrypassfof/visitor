@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entry Permit — تصريح دخول</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:#f0f2f5; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+.card { width:100%; max-width:400px; background:#fff; border-radius:20px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.10); }
+.status-block { padding:32px 24px; text-align:center; }
+.authorized { background:#22c55e; }
+.expired    { background:#ef4444; }
+.notyet     { background:#94a3b8; }
+.nodata     { background:#cbd5e1; }
+.status-en { font-size:28px; font-weight:900; color:#fff; letter-spacing:2px; text-transform:uppercase; margin-bottom:4px; }
+.status-ar { font-size:16px; font-weight:700; color:rgba(255,255,255,0.85); margin-bottom:12px; }
+.validity-badge { display:inline-block; background:rgba(0,0,0,0.15); color:#fff; font-size:10px; font-weight:700; letter-spacing:2px; padding:4px 12px; border-radius:20px; }
+.permit-header { padding:10px 20px; background:#fafafa; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; align-items:center; }
+.permit-en { font-size:10px; font-weight:700; letter-spacing:3px; color:#bbb; text-transform:uppercase; }
+.permit-ar { font-size:11px; font-weight:700; color:#bbb; }
+.org-row { padding:12px 20px; background:#fafafa; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; align-items:center; }
+.org-label { font-size:10px; font-weight:700; letter-spacing:2px; color:#bbb; text-transform:uppercase; }
+.org-value { font-size:13px; font-weight:700; color:#555; }
+.info-block { padding:0 20px; }
+.row { padding:13px 0; border-bottom:1px solid #f5f5f5; text-align:center; }
+.row:last-child { border-bottom:none; }
+.row-label { display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:5px; }
+.row-en { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#bbb; }
+.row-sep { font-size:10px; color:#ddd; }
+.row-ar { font-size:10px; font-weight:700; color:#bbb; }
+.row-value { font-size:17px; font-weight:700; color:#111; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="status-block nodata" id="statusBlock">
+    <div class="status-en" id="statusEn">—</div>
+    <div class="status-ar" id="statusAr">—</div>
+    <div class="validity-badge">VALID 07:00 – 20:00</div>
+  </div>
+  <div class="permit-header">
+    <span class="permit-en">Entry Permit</span>
+    <span class="permit-ar">تصريح دخول</span>
+  </div>
+  <div class="info-block" id="infoBlock"></div>
+</div>
+<script>
+function getParams(){const p=new URLSearchParams(window.location.search);return{name:p.get('name')||'',parking:p.get('parking')||'',date:p.get('date')||'',time:p.get('time')||'',car:p.get('car')||'',plate:p.get('plate')||'',platnum:p.get('platnum')||'',org:p.get('org')||''};}
+function getStatus(dateStr){if(!dateStr)return'nodata';const now=new Date();const todayStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;const hour=now.getHours();let visitStr='';if(dateStr.includes('/')){const parts=dateStr.split('/');if(parts.length===3)visitStr=`${parts[2]}-${String(parts[0]).padStart(2,'0')}-${String(parts[1]).padStart(2,'0')}`;}else{visitStr=dateStr.split('T')[0].trim();}if(visitStr===todayStr){if(hour<7)return'notyet';if(hour<20)return'authorized';return'expired';}return new Date(visitStr)>new Date(todayStr)?'notyet':'expired';}
+function row(en,ar,value){if(!value)return'';return`<div class="row"><div class="row-label"><span class="row-en">${en}</span><span class="row-sep">|</span><span class="row-ar">${ar}</span></div><div class="row-value">${value}</div></div>`;}
+function render(){const p=getParams();const status=getStatus(p.date);document.getElementById('statusBlock').className=`status-block ${status}`;const now=new Date();const todayStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;let visitStr=p.date;if(p.date&&p.date.includes('/')){const parts=p.date.split('/');if(parts.length===3)visitStr=`${parts[2]}-${String(parts[0]).padStart(2,'0')}-${String(parts[1]).padStart(2,'0')}`;}const isFuture=p.date&&new Date(visitStr)>new Date(todayStr);const labels={authorized:{en:'AUTHORIZED',ar:'مصرّح'},expired:{en:'EXPIRED',ar:'منتهي'},notyet:{en:isFuture?'NOT TODAY':'NOT YET',ar:isFuture?'ليس اليوم':'لم يبدأ'},nodata:{en:'NO DATA',ar:'لا توجد بيانات'}};document.getElementById('statusEn').textContent=labels[status].en;document.getElementById('statusAr').textContent=labels[status].ar;if(!p.name&&!p.date){document.getElementById('infoBlock').innerHTML='';return;}document.getElementById('infoBlock').innerHTML=`${p.org?`<div class="org-row"><span class="org-label">Organization</span><span class="org-value">${p.org}</span></div>`:''}${row('Visitor Name','اسم الزائر',p.name)}${row('Date','التاريخ',p.date)}${row('Time','الوقت',p.time)}${row('Parking','الموقف',p.parking)}${row('Vehicle','المركبة',p.car)}${row('Plate Letters','حروف اللوحة',p.plate)}${row('Plate Number','أرقام اللوحة',p.platnum)}`;}
+render();
+</script>
+</body>
+</html>
